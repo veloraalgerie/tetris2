@@ -1,0 +1,220 @@
+import React, { useEffect } from 'react';
+import { useTetris } from './hooks/useTetris';
+import { TETROMINOES, BOARD_WIDTH, BOARD_HEIGHT } from './utils/tetris';
+import { ArrowDown, ArrowLeft, ArrowRight, RotateCw, Pause, Play, ChevronsDown } from 'lucide-react';
+
+export default function App() {
+  const {
+    board,
+    currentPiece,
+    nextPieceType,
+    score,
+    level,
+    lines,
+    gameOver,
+    isPaused,
+    setIsPaused,
+    moveLeft,
+    moveRight,
+    moveDown,
+    rotate,
+    drop,
+    resetGame,
+  } = useTetris();
+
+  // Keyboard controls for desktop testing
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (gameOver) return;
+      switch (e.key) {
+        case 'ArrowLeft':
+          moveLeft();
+          break;
+        case 'ArrowRight':
+          moveRight();
+          break;
+        case 'ArrowDown':
+          moveDown();
+          break;
+        case 'ArrowUp':
+          rotate();
+          break;
+        case ' ':
+          drop();
+          break;
+        case 'p':
+        case 'P':
+          setIsPaused(!isPaused);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [moveLeft, moveRight, moveDown, rotate, drop, isPaused, setIsPaused, gameOver]);
+
+  // Combine board and current piece for rendering
+  const renderBoard = board.map((row) => [...row]);
+  if (currentPiece) {
+    currentPiece.shape.forEach((row, rIdx) => {
+      row.forEach((value, cIdx) => {
+        if (value !== 0) {
+          const boardY = currentPiece.y + rIdx;
+          const boardX = currentPiece.x + cIdx;
+          if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
+            renderBoard[boardY][boardX] = currentPiece.type;
+          }
+        }
+      });
+    });
+  }
+
+  const nextPieceShape = TETROMINOES[nextPieceType].shape;
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center font-sans touch-none select-none">
+      <div className="w-full max-w-md p-4 flex flex-col gap-4 h-[100dvh]">
+        {/* Header */}
+        <div className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl shadow-md border border-zinc-800">
+          <div className="flex flex-col">
+            <span className="text-xs text-zinc-400 uppercase tracking-wider font-bold">Score</span>
+            <span className="text-2xl font-mono font-bold text-emerald-400">{score}</span>
+          </div>
+          <div className="flex gap-4 text-center">
+            <div className="flex flex-col">
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-bold">Level</span>
+              <span className="text-xl font-mono font-bold">{level}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-bold">Lines</span>
+              <span className="text-xl font-mono font-bold">{lines}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Game Area */}
+        <div className="flex gap-4 flex-1 min-h-0">
+          {/* Game Board */}
+          <div className="flex-1 bg-zinc-900 p-2 rounded-2xl border border-zinc-800 relative flex items-center justify-center overflow-hidden">
+            <div className="h-full max-w-full flex items-center justify-center">
+              <div 
+                className="grid gap-[1px] bg-zinc-800 border border-zinc-700 h-full"
+                style={{
+                  gridTemplateColumns: `repeat(${BOARD_WIDTH}, minmax(0, 1fr))`,
+                  gridTemplateRows: `repeat(${BOARD_HEIGHT}, minmax(0, 1fr))`,
+                  aspectRatio: `${BOARD_WIDTH} / ${BOARD_HEIGHT}`,
+                }}
+              >
+                {renderBoard.map((row, y) =>
+                  row.map((cell, x) => (
+                    <div
+                      key={`${y}-${x}`}
+                      className={`w-full h-full ${
+                        cell ? TETROMINOES[cell].color : 'bg-zinc-950'
+                      } ${cell ? 'shadow-[inset_0_0_8px_rgba(0,0,0,0.3)] border border-black/20' : ''}`}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Overlays */}
+            {gameOver && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 rounded-2xl backdrop-blur-sm">
+                <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-widest">Game Over</h2>
+                <p className="text-zinc-400 mb-6 font-mono">Final Score: {score}</p>
+                <button
+                  onClick={resetGame}
+                  className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3 px-8 rounded-full transition-colors active:scale-95"
+                >
+                  Play Again
+                </button>
+              </div>
+            )}
+            
+            {isPaused && !gameOver && (
+              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-10 rounded-2xl backdrop-blur-sm">
+                <h2 className="text-3xl font-bold text-white mb-6 tracking-widest uppercase">Paused</h2>
+                <button
+                  onClick={() => setIsPaused(false)}
+                  className="bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-3 px-8 rounded-full transition-colors active:scale-95 flex items-center gap-2"
+                >
+                  <Play size={20} fill="currentColor" /> Resume
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="w-24 flex flex-col gap-4">
+            <div className="bg-zinc-900 p-3 rounded-2xl border border-zinc-800 flex flex-col items-center">
+              <span className="text-xs text-zinc-400 uppercase tracking-wider font-bold mb-3">Next</span>
+              <div 
+                className="grid gap-[1px]"
+                style={{
+                  gridTemplateColumns: `repeat(${nextPieceShape[0].length}, 16px)`,
+                  gridTemplateRows: `repeat(${nextPieceShape.length}, 16px)`
+                }}
+              >
+                {nextPieceShape.map((row, y) =>
+                  row.map((cell, x) => (
+                    <div
+                      key={`next-${y}-${x}`}
+                      className={`w-4 h-4 ${
+                        cell ? TETROMINOES[nextPieceType].color : 'bg-transparent'
+                      } ${cell ? 'shadow-[inset_0_0_4px_rgba(0,0,0,0.3)] border border-black/20' : ''}`}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsPaused(!isPaused)}
+              className="mt-auto bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
+            >
+              {isPaused ? <Play size={24} /> : <Pause size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Controls */}
+        <div className="grid grid-cols-3 gap-2 mt-auto pb-4">
+          <div className="col-span-3 flex justify-between gap-2 mb-2">
+            <button
+              onPointerDown={(e) => { e.preventDefault(); rotate(); }}
+              className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+            >
+              <RotateCw size={28} />
+            </button>
+            <button
+              onPointerDown={(e) => { e.preventDefault(); drop(); }}
+              className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+            >
+              <ChevronsDown size={28} />
+            </button>
+          </div>
+          
+          <button
+            onPointerDown={(e) => { e.preventDefault(); moveLeft(); }}
+            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+          >
+            <ArrowLeft size={32} />
+          </button>
+          <button
+            onPointerDown={(e) => { e.preventDefault(); moveDown(); }}
+            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+          >
+            <ArrowDown size={32} />
+          </button>
+          <button
+            onPointerDown={(e) => { e.preventDefault(); moveRight(); }}
+            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+          >
+            <ArrowRight size={32} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
