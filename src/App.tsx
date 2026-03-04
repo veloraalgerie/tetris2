@@ -2,10 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { useTetris } from './hooks/useTetris';
 import { TETROMINOES, BOARD_WIDTH, BOARD_HEIGHT } from './utils/tetris';
 import { translations, Language } from './utils/i18n';
-import { ArrowDown, ArrowLeft, ArrowRight, RotateCw, Pause, Play, ChevronsDown, Languages } from 'lucide-react';
+import { getLeaderboard, saveScore, ScoreEntry } from './utils/leaderboard';
+import { ArrowDown, ArrowLeft, ArrowRight, RotateCw, Pause, Play, ChevronsDown, Languages, Trophy, X, Save } from 'lucide-react';
 
 export default function App() {
   const [lang, setLang] = useState<Language>('fr');
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [playerName, setPlayerName] = useState('');
+  const [leaderboard, setLeaderboard] = useState<ScoreEntry[]>([]);
   const t = translations[lang];
 
   const {
@@ -17,6 +21,8 @@ export default function App() {
     lines,
     gameOver,
     isPaused,
+    newHighScore,
+    setNewHighScore,
     setIsPaused,
     moveLeft,
     moveRight,
@@ -26,10 +32,34 @@ export default function App() {
     resetGame,
   } = useTetris();
 
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      const data = await getLeaderboard();
+      setLeaderboard(data);
+    };
+    fetchLeaderboard();
+  }, []);
+
+  const handleSaveScore = async () => {
+    if (playerName.trim()) {
+      const updated = await saveScore(playerName, score);
+      setLeaderboard(updated);
+      setNewHighScore(false);
+      setPlayerName('');
+      setShowLeaderboard(true);
+    }
+  };
+
+  const openLeaderboard = async () => {
+    const data = await getLeaderboard();
+    setLeaderboard(data);
+    setShowLeaderboard(true);
+  };
+
   // Keyboard controls for desktop testing
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (gameOver) return;
+      if (gameOver || showLeaderboard) return;
       switch (e.key) {
         case 'ArrowLeft':
           moveLeft();
@@ -55,7 +85,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [moveLeft, moveRight, moveDown, rotate, drop, isPaused, setIsPaused, gameOver]);
+  }, [moveLeft, moveRight, moveDown, rotate, drop, isPaused, setIsPaused, gameOver, showLeaderboard]);
 
   // Combine board and current piece for rendering
   const renderBoard = board.map((row) => [...row]);
@@ -97,12 +127,14 @@ export default function App() {
               <span className="text-xl font-mono font-bold">{lines}</span>
             </div>
           </div>
-          <button 
-            onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
-            className="p-2 bg-zinc-800 rounded-xl border border-zinc-700 active:scale-95 transition-transform"
-          >
-            <Languages size={20} className="text-zinc-400" />
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
+              className="p-2 bg-zinc-800 rounded-xl border border-zinc-700 active:scale-95 transition-transform"
+            >
+              <Languages size={20} className="text-zinc-400" />
+            </button>
+          </div>
         </div>
 
         {/* Main Game Area */}
@@ -132,7 +164,7 @@ export default function App() {
             </div>
 
             {/* Overlays */}
-            {gameOver && (
+            {gameOver && !newHighScore && (
               <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 rounded-2xl backdrop-blur-sm">
                 <h2 className="text-4xl font-black text-white mb-2 uppercase tracking-widest text-center px-4">{t.gameOver}</h2>
                 <p className="text-zinc-400 mb-6 font-mono">{t.finalScore}: {score}</p>
@@ -142,6 +174,34 @@ export default function App() {
                 >
                   {t.playAgain}
                 </button>
+              </div>
+            )}
+
+            {gameOver && newHighScore && (
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 rounded-2xl backdrop-blur-sm p-6">
+                <Trophy size={48} className="text-yellow-500 mb-4 animate-bounce" />
+                <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-widest text-center">{t.newHighScore}</h2>
+                <p className="text-emerald-400 text-3xl font-mono font-bold mb-6">{score}</p>
+                
+                <div className="w-full space-y-4">
+                  <p className="text-zinc-400 text-sm text-center">{t.enterName}</p>
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={playerName}
+                    onChange={(e) => setPlayerName(e.target.value.toUpperCase())}
+                    placeholder={t.namePlaceholder}
+                    className="w-full bg-zinc-800 border-2 border-zinc-700 rounded-xl py-3 px-4 text-center text-2xl font-mono font-bold focus:border-emerald-500 outline-none transition-colors"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveScore}
+                    disabled={!playerName.trim()}
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:hover:bg-emerald-500 text-zinc-950 font-bold py-3 px-8 rounded-xl transition-colors active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    <Save size={20} /> {t.save}
+                  </button>
+                </div>
               </div>
             )}
             
@@ -154,6 +214,62 @@ export default function App() {
                 >
                   <Play size={20} fill="currentColor" /> {t.resume}
                 </button>
+              </div>
+            )}
+
+            {showLeaderboard && (
+              <div className="absolute inset-0 bg-zinc-900 flex flex-col z-20 rounded-2xl border border-zinc-800 animate-in fade-in zoom-in duration-200">
+                <div className="p-4 border-b border-zinc-800 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <Trophy size={20} className="text-yellow-500" />
+                    <h2 className="font-bold uppercase tracking-wider">{t.leaderboard}</h2>
+                  </div>
+                  <button 
+                    onClick={() => setShowLeaderboard(false)}
+                    className="p-1 hover:bg-zinc-800 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <div className="flex-1 p-4 space-y-2 overflow-y-auto">
+                  {leaderboard.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-zinc-500 italic">
+                      ---
+                    </div>
+                  ) : (
+                    leaderboard.map((entry, idx) => (
+                      <div 
+                        key={idx}
+                        className={`flex justify-between items-center p-3 rounded-xl border ${
+                          idx === 0 ? 'bg-yellow-500/10 border-yellow-500/50' : 'bg-zinc-800/50 border-zinc-700/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold ${
+                            idx === 0 ? 'bg-yellow-500 text-zinc-950' : 'bg-zinc-700 text-zinc-400'
+                          }`}>
+                            {idx + 1}
+                          </span>
+                          <span className="font-mono font-bold text-lg">{entry.name}</span>
+                        </div>
+                        <span className="font-mono font-bold text-emerald-400 text-lg">{entry.score}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {gameOver && !newHighScore && (
+                  <div className="p-4 border-t border-zinc-800">
+                    <button
+                      onClick={() => {
+                        setShowLeaderboard(false);
+                        resetGame();
+                      }}
+                      className="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3 rounded-xl transition-colors active:scale-95"
+                    >
+                      {t.playAgain}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -183,8 +299,15 @@ export default function App() {
             </div>
 
             <button
+              onClick={openLeaderboard}
+              className="bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
+            >
+              <Trophy size={24} className="text-yellow-500" />
+            </button>
+
+            <button
               onClick={() => setIsPaused(!isPaused)}
-              className="mt-auto bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
+              className="bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
             >
               {isPaused ? <Play size={24} /> : <Pause size={24} />}
             </button>

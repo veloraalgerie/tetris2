@@ -1,5 +1,5 @@
 {
-  "name": "Mobile Tetris",
+  "name": "tetris",
   "description": "A classic Tetris game optimized for mobile devices with touch controls.",
   "requestFramePermissions": []
 }

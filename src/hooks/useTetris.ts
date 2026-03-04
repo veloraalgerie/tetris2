@@ -9,6 +9,7 @@ import {
   checkCollision,
   rotateMatrix,
 } from '../utils/tetris';
+import { isHighScore } from '../utils/leaderboard';
 
 export const useTetris = () => {
   const [board, setBoard] = useState<(TetrominoType | null)[][]>(createEmptyBoard());
@@ -24,8 +25,9 @@ export const useTetris = () => {
   const [lines, setLines] = useState(0);
   const [gameOver, setGameOver] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [newHighScore, setNewHighScore] = useState(false);
 
-  const spawnPiece = useCallback(() => {
+  const spawnPiece = useCallback(async () => {
     const type = nextPieceType;
     const shape = TETROMINOES[type].shape;
     const x = Math.floor((BOARD_WIDTH - shape[0].length) / 2);
@@ -33,12 +35,14 @@ export const useTetris = () => {
 
     if (checkCollision(board, shape, x, y)) {
       setGameOver(true);
+      const high = await isHighScore(score);
+      setNewHighScore(high);
       return;
     }
 
     setCurrentPiece({ type, shape, x, y });
     setNextPieceType(randomTetromino());
-  }, [board, nextPieceType]);
+  }, [board, nextPieceType, score]);
 
   const mergePiece = useCallback((pieceToMerge = currentPiece) => {
     if (!pieceToMerge) return;
@@ -131,6 +135,7 @@ export const useTetris = () => {
     setLines(0);
     setGameOver(false);
     setIsPaused(false);
+    setNewHighScore(false);
     setNextPieceType(randomTetromino());
     setCurrentPiece(null);
   }, []);
@@ -159,6 +164,8 @@ export const useTetris = () => {
     lines,
     gameOver,
     isPaused,
+    newHighScore,
+    setNewHighScore,
     setIsPaused,
     moveLeft,
     moveRight,

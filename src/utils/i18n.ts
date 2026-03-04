@@ -11,6 +11,11 @@ export const translations = {
     playAgain: 'Rejouer',
     paused: 'Pause',
     resume: 'Reprendre',
+    leaderboard: 'Meilleurs Scores',
+    enterName: 'Entrez votre nom',
+    save: 'Enregistrer',
+    namePlaceholder: 'NOM',
+    newHighScore: 'Nouveau Record !',
     dir: 'ltr'
   },
   ar: {
@@ -23,6 +28,11 @@ export const translations = {
     playAgain: 'إلعب مجدداً',
     paused: 'متوقف مؤقتاً',
     resume: 'استئناف',
+    leaderboard: 'أفضل النتائج',
+    enterName: 'أدخل اسمك',
+    save: 'حفظ',
+    namePlaceholder: 'الاسم',
+    newHighScore: 'رقم قياسي جديد!',
     dir: 'rtl'
   }
 };
