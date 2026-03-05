@@ -126,6 +126,16 @@ export default function App() {
       dir={t.dir}
     >
       <div className="w-full max-w-md p-4 flex flex-col gap-4 h-[100dvh]">
+        {/* Clinic Banner */}
+        <div 
+          className="w-full py-2 px-4 rounded-xl shadow-lg border border-white/10 flex items-center justify-center"
+          style={{ backgroundColor: '#0E9C9A' }}
+        >
+          <span className="text-white font-bold tracking-widest uppercase text-sm">
+            Clinique Ibn Nafis
+          </span>
+        </div>
+
         {/* Header */}
         <div className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl shadow-md border border-zinc-800">
           <div className="flex flex-col">
