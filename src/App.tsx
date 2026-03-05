@@ -50,10 +50,25 @@ export default function App() {
     }
   };
 
-  const openLeaderboard = async () => {
-    const data = await getLeaderboard();
-    setLeaderboard(data);
-    setShowLeaderboard(true);
+  const toggleLeaderboard = async () => {
+    if (showLeaderboard) {
+      setShowLeaderboard(false);
+      setIsPaused(false);
+    } else {
+      const data = await getLeaderboard();
+      setLeaderboard(data);
+      setIsPaused(true);
+      setShowLeaderboard(true);
+    }
+  };
+
+  const togglePause = () => {
+    if (showLeaderboard) {
+      setShowLeaderboard(false);
+      setIsPaused(false);
+    } else {
+      setIsPaused(!isPaused);
+    }
   };
 
   // Keyboard controls for desktop testing
@@ -225,7 +240,7 @@ export default function App() {
                     <h2 className="font-bold uppercase tracking-wider">{t.leaderboard}</h2>
                   </div>
                   <button 
-                    onClick={() => setShowLeaderboard(false)}
+                    onClick={toggleLeaderboard}
                     className="p-1 hover:bg-zinc-800 rounded-lg transition-colors"
                   >
                     <X size={24} />
@@ -299,14 +314,14 @@ export default function App() {
             </div>
 
             <button
-              onClick={openLeaderboard}
+              onClick={toggleLeaderboard}
               className="bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
             >
               <Trophy size={24} className="text-yellow-500" />
             </button>
 
             <button
-              onClick={() => setIsPaused(!isPaused)}
+              onClick={togglePause}
               className="bg-zinc-800 hover:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center transition-colors active:scale-95 border border-zinc-700"
             >
               {isPaused ? <Play size={24} /> : <Pause size={24} />}
@@ -315,41 +330,43 @@ export default function App() {
         </div>
 
         {/* Mobile Controls */}
-        <div className="grid grid-cols-3 gap-2 mt-auto pb-4" dir="ltr">
-          <div className="col-span-3 flex justify-between gap-2 mb-2">
+        {!showLeaderboard && (
+          <div className="grid grid-cols-3 gap-2 mt-auto pb-4" dir="ltr">
+            <div className="col-span-3 flex justify-between gap-2 mb-2">
+              <button
+                onPointerDown={(e) => { e.preventDefault(); rotate(); }}
+                className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+              >
+                <RotateCw size={28} />
+              </button>
+              <button
+                onPointerDown={(e) => { e.preventDefault(); drop(); }}
+                className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+              >
+                <ChevronsDown size={28} />
+              </button>
+            </div>
+            
             <button
-              onPointerDown={(e) => { e.preventDefault(); rotate(); }}
-              className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+              onPointerDown={(e) => { e.preventDefault(); moveLeft(); }}
+              className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
             >
-              <RotateCw size={28} />
+              <ArrowLeft size={32} />
             </button>
             <button
-              onPointerDown={(e) => { e.preventDefault(); drop(); }}
-              className="flex-1 bg-zinc-800 active:bg-zinc-700 p-4 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+              onPointerDown={(e) => { e.preventDefault(); moveDown(); }}
+              className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
             >
-              <ChevronsDown size={28} />
+              <ArrowDown size={32} />
+            </button>
+            <button
+              onPointerDown={(e) => { e.preventDefault(); moveRight(); }}
+              className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
+            >
+              <ArrowRight size={32} />
             </button>
           </div>
-          
-          <button
-            onPointerDown={(e) => { e.preventDefault(); moveLeft(); }}
-            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
-          >
-            <ArrowLeft size={32} />
-          </button>
-          <button
-            onPointerDown={(e) => { e.preventDefault(); moveDown(); }}
-            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
-          >
-            <ArrowDown size={32} />
-          </button>
-          <button
-            onPointerDown={(e) => { e.preventDefault(); moveRight(); }}
-            className="bg-zinc-800 active:bg-zinc-700 p-6 rounded-2xl flex items-center justify-center border border-zinc-700 touch-manipulation"
-          >
-            <ArrowRight size={32} />
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
